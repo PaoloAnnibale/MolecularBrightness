@@ -1,6 +1,8 @@
 This procedure file contains the multiple functions necessary to analyze 
 fluorescence microscopy images and extract molecular number and brightness information from
-time series (temporal brightness) or still snapshots (spatial brightness)
+time series (temporal brightness) or still snapshots (spatial brightness).
+
+To be run, the procedure requires IgorPro (wavemetrics) 7 or higher version. To run the procedure file, just open it from Igor and compile it.
 
 The functions actually dealing with brightness calculation are
 1. temporal_brighntess() which calulates brightness values from each pixel of a time series. The user has the option to select
