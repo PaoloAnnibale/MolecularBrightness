@@ -16,12 +16,16 @@ of the actual score over the threshold (As defined upon performing the Kolmogoro
 (that of actual pixels in the ROI and that of the pixel of an 'ideal' ROI, Gauss distributed with the same mean and variance as the first). The higher the score 
 the more Gaussian the distribution of the pixels in the ROI.
 3. SpIDA_photoncounting() Calculates one brightness value from a single image (or ROI thereof) based on the relationship between the variance
-and the mean of the pixel intensities in the region. The code works for images acquired using photon counting detectors (recommended). For the analog
-case we refer here to Godin et al. PNAS 2011, doi/10.1073/pnas.1018658108 and to the related code available under https://neurophotonics.ca/software
+and the mean of the pixel intensities in the region. The code works for images acquired using photon counting detectors (recommended). 
+4. Spida_analog()
+This function deals with the analog case using the simplest approach. It requires preliminary determination of detector's offset, S-factor and sigma0. 
+Once these parameters are known, each pixel's intensity value is corrected for the offset and divided by the S-factor. Then the variance of a ROI is calculated.
+To this variance, the variance due to detector's dark counts (sigma0^2) is subtracted. The spatial brightness arises from dividing this subtracted value by the corrected average intensity within the ROI.
 The function contains also the code to provide a Gaussianity score for the selected ROI. This score is determined as the ratio
 of the actual score over the threshold (As defined upon performing the Kolmogorov-Smirnov (KS) goodness-of-fit test for two continuous distributions
 (that of actual pixels in the ROI and that of the pixel of an 'ideal' ROI, Gauss distributed with the same mean and variance as the first). The higher the score 
 the more Gaussian the distribution of the pixels in the ROI.
+For Spatial Brightness calculations with analog detectors we refer here also to Godin et al. PNAS 2011, doi/10.1073/pnas.1018658108 and to the related code available under https://neurophotonics.ca/software
 	
 The concepts contained in the above three functions can be exported to any other language/code, and provide the simple foundation of Molecular Brightness calculation.
 
