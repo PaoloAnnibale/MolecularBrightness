@@ -39,7 +39,8 @@
 
 Menu "Brightness menu"
 	"temporal brightness", temporal_brighntess()
-	"spatial brightness", SpIDA_photoncounting()
+	"spatial brightness photon counting", SpIDA_photoncounting()
+	"spatial brightness analog detector", SpIDA_analog()
 	"highligh on brightness plot", highlightBch1_poly()
 	"highligh on intensity plot", highlightIch1_poly()
 End
@@ -315,6 +316,117 @@ print WaveDims(Spida_wave)
 			 	endif
 
 end
+
+///////////////////////////////////////////////////////////
+/////////////////////SpIDA analog detector ////////////////
+///////////////////////////////////////////////////////////
+
+function SpIDA_analog()
+
+
+//detector calibration parameters
+variable offset=481 //detector koff, i.e. dark counts baseline. 
+variable S=244 //Photon conversion factor for analog detectors. 
+variable sigma0=9.4 //width of the dark counts distribution. 
+variable doscoring=1 //determines whether scoring for ROI homogeneity shall be performed.
+
+//prompts the user in order to read the string name of SpIDA file
+string waveNM 
+	
+	Prompt waveNM,"current cell",popup,WaveList("*",";","DIMS:2")	// Set prompt for y param
+	DoPrompt "Select current  cell name", waveNM
+	if (V_Flag)
+		return -1					// User canceled
+	endif
+	///////
+string/G wn_SpIDA=waveNM
+//////////
+
+variable i,j,k
+variable/G sizex, sizey
+wave SpIDA_wave=$(wn_SpIDA)
+wave SpIDA_wave1=SpIDA_wave
+sizex=DimSize(SpIDA_wave, 0)
+sizey=DimSize(SpIDA_wave, 1)
+
+
+//removes offset and corrects each pixel intensity value for S-factor
+SpIDA_wave1-=offset
+Spida_wave1/=S
+
+
+make/O/N=(sizex, sizey) M_ROIMask
+make/o/N=(sizex*sizey) pixelsinROI
+
+print WaveDims(Spida_wave)
+	////Creates and display the SpIDA picture
+		dowindow/K SpIDA_preview
+		display/N=SpIDA_preview /M/W=(30,25,45,35 ); appendimage/W=SpIDA_preview SpIDA_wave
+		//ModifyImage SpIDA_wave ctab= {*,*,Grays,0}
+
+///////////////
+////Prompts the user to select a region of interest where to perform the N&B analysis
+
+			DoWindow/F SpIDA_preview		// Bring graph to front
+			
+			if (V_Flag == 0)									// Verify that graph exists
+				Abort "UserCursorAdjust: No such graph."
+				return -1
+			endif
+		
+			NewPanel/K=2 /W=(139,341,382,432) as "Pause for Cursor"
+			DoWindow/C tmp_PauseforCursor_preview			// Set to an unlikely name
+			AutoPositionWindow/E/M=1/R=SpIDA_preview		// Put panel near the graph
+		
+			DrawText 21,20,"Adjust the polygon cursors and then. Doubleclick when finished"
+			DrawText 21,40,"Click Continue."
+			
+			Button button1,pos={20,58},size={92,20}, title="Draw Polygon "
+			Button button1, proc=puntinelpoligono_SpIDA_preview
+		
+			Button button0,pos={120,58},size={92,20}, title="Continue"
+			Button button0, proc=autochiuditi_SpIDA_preview
+			
+			PauseForUser tmp_PauseforCursor_preview, SpIDA_preview
+
+			ImageBoundaryToMask width=sizex, height=sizey, xwave=x_poly, ywave=y_poly, seedX=mean(x_poly), seedY=mean(y_poly) 
+		
+			k=0
+			
+			for(i=0; i<sizex; i+=1)
+	
+				for(j=0; j<sizey; j+=1)
+		
+					if(M_ROIMask[i][j]==1)	
+					pixelsinROI[k]=SpIDA_wave1[i][j]
+					k+=1	
+					endif				
+				endfor
+			
+			endfor
+			deletepoints (k), (sizex*sizey-k), pixelsinROI
+
+			wavestats/Q pixelsinROI
+			variable brightness=((V_sdev)^2-sigma0^2)/V_avg-1 //subtracts detector variance to molecular variance
+			variable number=V_avg/brightness
+			print "the brightness is: "+num2str(brightness)
+			print "the number is: "+num2str(number)
+
+
+			//this part scores each ROI for Gaussianity. Iterative ROI selection should maximize this value
+			
+		    	if(doscoring==1)
+		    	make/O/N=(V_npnts) theory_data
+		    	wave W_KSResults
+		    	variable score
+			 	theory_data=gnoise(V_sdev/sqrt(2)) + V_avg //generates Gaussian distributed intensity values for a ROI containing as many pixels as pixelsinROI and its mean and variance
+		 		StatsKSTest/ALPH=0.05/Z/Q/T=1 pixelsinROI,theory_data //Calculates for Gaussianity using Komogorov-Smirnov criterion
+	 	 		print "the gaussianity score is: "+num2str(W_KSResults[5]/W_KSResults[4]) //the bigger this value the better (it is the ratio between threshold and measured value, the measured value should be below threshold for gaussianity
+			 	endif
+
+end
+
+
 
 ///////////////////////////////////////////
 /////////////Boxcar for images/////////////
