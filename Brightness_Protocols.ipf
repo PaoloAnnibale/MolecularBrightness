@@ -694,18 +694,19 @@ variable V_stdev, V_npnts
 	Label bottom "Brightness"
 	ShowInfo
 
-
-				
-				wavestats/Q intensity2avg_w //calculates the statistics of the pixels of the intensity image within the polygonal ROI
-		    	make/O/N=(V_npnts) theory_data
-		    	wave W_KSResults
-			 	theory_data=gnoise(V_sdev/sqrt(2)) + V_avg //generates Gaussian distributed intensity values for a ROI containing as many pixels as pixelsinROI and its mean and variance
-		 		StatsKSTest/ALPH=0.05/Z/Q/T=1 intensity2avg_w,theory_data //Calculates for Gaussianity using Komogorov-Smirnov criterion
-	 	 		print "the gaussianity score is: "+num2str(W_KSResults[5]/W_KSResults[4]) //the bigger this value the better (it is the ratio between threshold and measured value, the measured value should be below threshold for gaussianity
-
-
 print "mean Brightness ROI: "+num2str(V_avg)
 print "mean intensity ROI: "+num2str(mean(intensity2avg_w))
+				
+			wavestats/Q intensity2avg_w //calculates the statistics of the pixels of the intensity image within the polygonal ROI
+		    	make/O/N=(V_npnts) theory_data
+		    	wave W_KSResults
+			theory_data=gnoise(V_sdev/sqrt(2)) + V_avg //generates Gaussian distributed intensity values for a ROI containing as many pixels as pixelsinROI and its mean and variance
+		 	StatsKSTest/ALPH=0.05/Z/Q/T=1 intensity2avg_w,theory_data //Calculates for Gaussianity using Komogorov-Smirnov criterion
+
+print "the gaussianity score is: "+num2str(W_KSResults[5]/W_KSResults[4]) //the bigger this value the better (it is the ratio between threshold and measured value, the measured value should be below threshold for gaussianity
+
+
+
 
 end
 
